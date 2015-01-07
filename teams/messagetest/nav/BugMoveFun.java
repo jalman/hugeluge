@@ -36,10 +36,10 @@ public class BugMoveFun extends NavAlg {
 
 
   public BugMoveFun() {
-    edgeXMin = -1;
-    edgeXMax = MAP_WIDTH;
-    edgeYMin = -1;
-    edgeYMax = MAP_HEIGHT;
+    edgeXMin = MAP_MIN_X;
+    edgeXMax = MAP_MAX_X;
+    edgeYMin = MAP_MIN_X;
+    edgeYMax = MAP_MAX_X;
 
     reset();
   }
@@ -63,13 +63,13 @@ public class BugMoveFun extends NavAlg {
 
   public void reset() {
     tracing = -1;
-    defaultTraceDirection = Clock.getRoundNum()/200%2; //(int)(Util.randDouble()+0.5);
+    defaultTraceDirection = Clock.getRoundNum() / 200 % 2; // (int)(Util.randDouble()+0.5);
     traceThreshold = INITIAL_TRACE_THRESHOLD;
     hitEdgeInOtherTraceDirection = false;
   }
 
   public boolean isTracing() {
-    return tracing!=-1;
+    return tracing != -1;
   }
 
   @Override
@@ -79,7 +79,7 @@ public class BugMoveFun extends NavAlg {
     boolean movable[] = new boolean[8];
     if (AVOID_ENEMY_HQ && currentLocation.distanceSquaredTo(ENEMY_HQ) <= 35) {
 
-      for(int i=0; i<8; i++) {
+      for (int i = 0; i < 8; i++) {
         dir = DIRECTIONS[i];
         MapLocation next = currentLocation.add(dir);
         movable[i] =
@@ -87,7 +87,7 @@ public class BugMoveFun extends NavAlg {
                 && !inRangeOfEnemyHQ(next.add(next.directionTo(ENEMY_HQ)));
       }
     } else {
-      for(int i=0; i<8; i++) {
+      for (int i = 0; i < 8; i++) {
         dir = DIRECTIONS[i];
         movable[i] = RC.canMove(dir);
       }
@@ -104,57 +104,57 @@ public class BugMoveFun extends NavAlg {
    * <br/> -no DIRECTIONS to move
    */
   public int[] computeMove(int sx, int sy, boolean[] movableTerrain) {
-    if(sx==tx && sy==ty)
+    if (sx == tx && sy == ty)
       return null;
-    if(Math.abs(sx-tx)<=1 && Math.abs(sy-ty)<=1) {
-      return new int[] {tx-sx, ty-sy};
+    if (Math.abs(sx - tx) <= 1 && Math.abs(sy - ty) <= 1) {
+      return new int[] {tx - sx, ty - sy};
     }
 
-    double dist = (sx-tx)*(sx-tx)+(sy-ty)*(sy-ty);
-    if(tracing!=-1) {
+    double dist = (sx - tx) * (sx - tx) + (sy - ty) * (sy - ty);
+    if (tracing != -1) {
       turnsTraced++;
-      if(dist<traceDistance) {
+      if (dist < traceDistance) {
         tracing = -1;
         hitEdgeInOtherTraceDirection = false;
-      } else if(turnsTraced>=traceThreshold) {
+      } else if (turnsTraced >= traceThreshold) {
         tracing = -1;
         traceThreshold *= 3;
-        defaultTraceDirection = 1-defaultTraceDirection;
+        defaultTraceDirection = 1 - defaultTraceDirection;
         hitEdgeInOtherTraceDirection = false;
-      } else if(!(sx==expectedsx && sy==expectedsy)) {
-        int i = getDirTowards(expectedsx-sx, expectedsy-sy);
-        if(movableTerrain[i])
+      } else if (!(sx == expectedsx && sy == expectedsy)) {
+        int i = getDirTowards(expectedsx - sx, expectedsy - sy);
+        if (movableTerrain[i])
           return directions[i];
         else
           wallDir = i;
-      } else if(movableTerrain[wallDir]) {
+      } else if (movableTerrain[wallDir]) {
         // Tracing around phantom wall
-        //   (could happen if a wall was actually a moving unit)
+        // (could happen if a wall was actually a moving unit)
         tracing = -1;
         hitEdgeInOtherTraceDirection = false;
-      } else if(!hitEdgeInOtherTraceDirection) {
+      } else if (!hitEdgeInOtherTraceDirection) {
         int x = sx + directions[wallDir][0];
         int y = sy + directions[wallDir][1];
-        if(x<=edgeXMin || x>=edgeXMax || y<=edgeYMin || y>=edgeYMax) {
+        if (x <= edgeXMin || x >= edgeXMax || y <= edgeYMin || y >= edgeYMax) {
           tracing = 1 - tracing;
           defaultTraceDirection = 1 - defaultTraceDirection;
           hitEdgeInOtherTraceDirection = true;
         }
       }
     }
-    if(tracing==-1) {
-      int dir = getDirTowards(tx-sx, ty-sy);
-      if(movableTerrain[dir]) return directions[dir];
+    if (tracing == -1) {
+      int dir = getDirTowards(tx - sx, ty - sy);
+      if (movableTerrain[dir]) return directions[dir];
       tracing = defaultTraceDirection;
       traceDistance = dist;
       turnsTraced = 0;
       wallDir = dir;
     }
-    if(tracing!=-1) {
-      for(int ti=1; ti<8; ti++) {
-        int dir = ((1-tracing*2)*ti + wallDir + 8) % 8;
-        if(movableTerrain[dir]) {
-          wallDir = (dir+6+5*tracing)/2%4*2; //magic formula
+    if (tracing != -1) {
+      for (int ti = 1; ti < 8; ti++) {
+        int dir = ((1 - tracing * 2) * ti + wallDir + 8) % 8;
+        if (movableTerrain[dir]) {
+          wallDir = (dir + 6 + 5 * tracing) / 2 % 4 * 2; // magic formula
           expectedsx = sx + directions[dir][0];
           expectedsy = sy + directions[dir][1];
           return directions[dir];
@@ -168,23 +168,35 @@ public class BugMoveFun extends NavAlg {
    * or as close to it as possible.
    */
   private static int getDirTowards(int dx, int dy) {
-    if(dx==0) {
-      if(dy>0) return 4;
-      else return 0;
+    if (dx == 0) {
+      if (dy > 0)
+        return 4;
+      else
+        return 0;
     }
-    double slope = ((double)dy)/dx;
-    if(dx>0) {
-      if(slope>2.414) return 4;
-      else if(slope>0.414) return 3;
-      else if(slope>-0.414) return 2;
-      else if(slope>-2.414) return 1;
-      else return 0;
+    double slope = ((double) dy) / dx;
+    if (dx > 0) {
+      if (slope > 2.414)
+        return 4;
+      else if (slope > 0.414)
+        return 3;
+      else if (slope > -0.414)
+        return 2;
+      else if (slope > -2.414)
+        return 1;
+      else
+        return 0;
     } else {
-      if(slope>2.414) return 0;
-      else if(slope>0.414) return 7;
-      else if(slope>-0.414) return 6;
-      else if(slope>-2.414) return 5;
-      else return 4;
+      if (slope > 2.414)
+        return 0;
+      else if (slope > 0.414)
+        return 7;
+      else if (slope > -0.414)
+        return 6;
+      else if (slope > -2.414)
+        return 5;
+      else
+        return 4;
     }
   }
 }

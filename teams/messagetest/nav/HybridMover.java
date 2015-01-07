@@ -72,13 +72,16 @@ public class HybridMover {
 
   }
 
-  private final Computation[][] cache = new Computation[MAP_WIDTH][MAP_HEIGHT];
+  private final Computation[][] cache = new Computation[WRAP_X][WRAP_Y];
 
   private Computation getComputation() {
-    if (cache[dest.x][dest.y] == null) {
-      cache[dest.x][dest.y] = new Computation();
+    int x = dest.x % WRAP_X;
+    int y = dest.y % WRAP_Y;
+
+    if (cache[x][y] == null) {
+      cache[x][y] = new Computation();
     }
-    return cache[dest.x][dest.y];
+    return cache[x][y];
   }
 
   private void simpleMove(MapLocation loc) throws GameActionException {

@@ -1,6 +1,6 @@
 package messagetest.utils;
 
-import java.util.Arrays;
+import java.util.*;
 
 public class BucketQueue<T> {
 
@@ -39,18 +39,18 @@ public class BucketQueue<T> {
   }
 
   public T deleteMin() {
-    while(length[min] == 0) {
-      min++;
+    while (length[min] == 0) {
+      ++min;
     }
-    size--;
+    --size;
     return queue[min][--length[min]];
   }
 
   @Override
   public String toString() {
     StringBuilder s = new StringBuilder();
-    for(int key = 0; key < queue.length; key++) {
-      for(int i = 0; i < length[key]; i++) {
+    for (int key = 0; key < queue.length; key++) {
+      for (int i = 0; i < length[key]; i++) {
         s.append(queue[key][i]).append(" ");
       }
     }

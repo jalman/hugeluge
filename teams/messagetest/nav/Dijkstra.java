@@ -17,25 +17,25 @@ public class Dijkstra {
   /**
    * Direction in which we traveled to get to this location.
    */
-  public Direction[][] from = new Direction[MAP_WIDTH][MAP_HEIGHT];
+  public Direction[][] from = new Direction[WRAP_X][WRAP_Y];
 
   public static final int PARENT_DIST = 50;
   /**
    * Used to speed up path lookup.
    */
-  // public MapLocation[][] parent = new MapLocation[MAP_WIDTH][MAP_HEIGHT];
+  // public MapLocation[][] parent = new MapLocation[WRAP_X][WRAP_Y];
   /**
    * Distance (times 5) to this location.
    */
-  public int distance[][] = new int[MAP_WIDTH][MAP_HEIGHT];
+  public int distance[][] = new int[WRAP_X][WRAP_Y];
 
-  private final BucketQueue<MapLocation> queue = new BucketQueue<MapLocation>(2 * MAP_SIZE, 50);
+  private final BucketQueue<MapLocation> queue = new BucketQueue<MapLocation>(2 * MAP_MAX_SIZE, 50);
 
   public Dijkstra(MapLocation... sources) {
     this.sources = new LocSet(sources);
     for (MapLocation source : sources) {
       queue.insert(0, source);
-      distance[source.x][source.y] = 0;
+      distance[source.x % WRAP_X][source.y % WRAP_Y] = 0;
       // parent[source.x][source.y] = source;
       // leave as null to cause exceptions if we accidentally try to use it
       // from[source.x][source.y] = Direction.NONE;
@@ -55,7 +55,7 @@ public class Dijkstra {
    * @return Whether we found a destination.
    */
   public boolean compute(int bytecodes, boolean broadcast, MapLocation... dests) {
-    boolean[][] end = new boolean[MAP_WIDTH][MAP_HEIGHT];
+    boolean[][] end = new boolean[WRAP_X][WRAP_Y];
     MapLocation dest;
     for (int i = dests.length - 1; i >= 0; --i) {
       dest = dests[i];
@@ -97,8 +97,8 @@ public class Dijkstra {
       next = queue.deleteMin();
       min = queue.min;
 
-      x = next.x;
-      y = next.y;
+      x = next.x % WRAP_X;
+      y = next.y % WRAP_Y;
 
       // check if we have already visited this node
       if (min == distance[x][y]) {
@@ -131,6 +131,8 @@ public class Dijkstra {
         // break;
         // }
 
+
+        // TODO: Huge problem here; the terrain tile might be OFF_MAP or UNKNOWN
         weight = WEIGHT[RC.senseTerrainTile(next).ordinal()];
 
         int i;
@@ -150,8 +152,8 @@ public class Dijkstra {
           if (RC.senseTerrainTile(nbr).isTraversable()) {
             w = min + weight[dir.ordinal()];
 
-            x = nbr.x;
-            y = nbr.y;
+            x = nbr.x % WRAP_X;
+            y = nbr.y % WRAP_Y;
 
             if (from[x][y] == null) {
               queue.insert_fast(w, nbr);
@@ -195,6 +197,6 @@ public class Dijkstra {
   }
 
   public boolean visited(MapLocation loc) {
-    return from[loc.x][loc.y] != null;
+    return from[loc.x % WRAP_X][loc.y % WRAP_Y] != null;
   }
 }

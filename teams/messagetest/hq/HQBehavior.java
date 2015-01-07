@@ -21,7 +21,8 @@ public class HQBehavior extends RobotBehavior {
   static RobotInfo[] alliedRobots;
   static int numBots; // , numNoiseTowers, numPastrs, numSoldiers;
 
-  static boolean[] knownAlliedIDs = new boolean[10000]; // knownAlliedIDs[n] is true if n is known
+  static boolean[] knownAlliedIDs = new boolean[100000];
+
   static int numSoldiersSpawned = 0;
   static Direction soldierSpawnDirection = Direction.NONE;
   static int mostRecentlySpawnedSoldierID = -1;
@@ -119,7 +120,9 @@ public class HQBehavior extends RobotBehavior {
     for (int i = -4; i <= 4; ++i) {
       for (int j = -4; j <= 4; ++j) {
         l = loc.add(i, j);
-        if (l.x >= 0 && l.y >= 0 && l.x < MAP_WIDTH && l.y < MAP_HEIGHT) {
+        TerrainTile tile = RC.senseTerrainTile(l);
+
+        if (tile != TerrainTile.OFF_MAP) {
           Direction toL = loc.directionTo(l);
           if (toL == toEnemy || toL.rotateLeft() == toEnemy || toL.rotateRight() == toEnemy) {
             /*

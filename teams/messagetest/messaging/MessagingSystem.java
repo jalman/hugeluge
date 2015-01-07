@@ -1,5 +1,6 @@
 package messagetest.messaging;
 
+import static battlecode.common.GameConstants.*;
 import static messagetest.utils.Utils.*;
 import messagetest.utils.*;
 import battlecode.common.*;
@@ -351,26 +352,30 @@ public class MessagingSystem {
     }
   }
 
+  private static final int dirToInt(Direction dir) {
+    return dir == null ? 0 : dir.ordinal() + 1;
+  }
+
   private static final int shift = 16;
   private static final int mask = (1 << shift) - 1;
 
   public void writePathingInfo(MapLocation loc, Direction dir, int distance, MapLocation parent)
       throws GameActionException {
-    int offset = loc.x * MAP_HEIGHT + loc.y;
+    int offset = loc.x * MAP_MAX_HEIGHT + loc.y;
     RC.broadcast(ReservedMessageType.PATHING1.channel() + offset,
-        (dir != null ? dir.ordinal() + 1 : 0) << shift | distance);
+        dirToInt(dir) << shift | distance);
     // RC.broadcast(ReservedMessageType.PATHING2.channel() + offset, parent.x << shift | parent.y);
   }
 
   public Pair<Direction, Integer> readPathingInfo(MapLocation loc) throws GameActionException {
     int broadcast =
-        RC.readBroadcast(ReservedMessageType.PATHING1.channel() + loc.x * MAP_HEIGHT + loc.y);
+        RC.readBroadcast(ReservedMessageType.PATHING1.channel() + loc.x * MAP_MAX_HEIGHT + loc.y);
     return new Pair<Direction, Integer>(INT_TO_DIR[broadcast >> shift], broadcast & mask);
   }
 
   public MapLocation readParent(MapLocation loc) throws GameActionException {
     int broadcast =
-        RC.readBroadcast(ReservedMessageType.PATHING2.channel() + loc.x * MAP_HEIGHT + loc.y);
+        RC.readBroadcast(ReservedMessageType.PATHING2.channel() + loc.x * MAP_MAX_HEIGHT + loc.y);
     return new MapLocation(broadcast >> shift, broadcast & mask);
   }
 

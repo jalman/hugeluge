@@ -66,14 +66,20 @@ public class Utils {
     }
   }
 
-  public static final int MAP_MAX_SIZE = GameConstants.MAP_MAX_WIDTH * GameConstants.MAP_MAX_HEIGHT;
+  public static final int WRAP_X = GameConstants.MAP_MAX_WIDTH + 10;
+  public static final int WRAP_Y = GameConstants.MAP_MAX_HEIGHT + 10;
+  public static final int MAP_MAX_SIZE = WRAP_X * WRAP_Y;
 
   // these are set from the beginning of the game
   public static RobotController RC;
   public static RobotInfo ROBOT;
   public static int ID;
   public static RobotType TYPE;
-  public static int MAP_WIDTH, MAP_HEIGHT, MAP_SIZE;
+  // public static int MAP_WIDTH, MAP_HEIGHT, MAP_SIZE;
+  /**
+   * Estimates honed over time.
+   */
+  public static int MAP_MIN_X, MAP_MAX_X, MAP_MIN_Y, MAP_MAX_Y;
   public static Team ALLY_TEAM, ENEMY_TEAM;
   public static MapLocation ALLY_HQ, ENEMY_HQ;
   public static Direction ENEMY_DIR;
@@ -110,6 +116,16 @@ public class Utils {
     HQ_DY = ENEMY_HQ.y - ALLY_HQ.y;
     // HQ_DIST = naiveDistance(ALLY_HQ,ENEMY_HQ);
 
+    int min_x = Math.min(ALLY_HQ.x, ENEMY_HQ.x);
+    int max_x = Math.max(ALLY_HQ.x, ENEMY_HQ.x);
+    int min_y = Math.min(ALLY_HQ.y, ENEMY_HQ.y);
+    int max_y = Math.max(ALLY_HQ.y, ENEMY_HQ.y);
+
+    MAP_MIN_X = max_x - GameConstants.MAP_MAX_WIDTH;
+    MAP_MAX_X = min_x + GameConstants.MAP_MAX_WIDTH;
+    MAP_MIN_Y = max_y - GameConstants.MAP_MAX_HEIGHT;
+    MAP_MAX_Y = min_y + GameConstants.MAP_MAX_HEIGHT;
+
     currentLocation = RC.getLocation();
     curX = currentLocation.x;
     curY = currentLocation.y;
@@ -120,6 +136,7 @@ public class Utils {
 
     messagingSystem = new MessagingSystem();
 
+    // TODO: different robot types now
     if (TYPE == RobotType.SOLDIER) {
       updateUnitUtils();
     } else {

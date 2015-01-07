@@ -16,20 +16,20 @@ public class DStar extends GradientMover {
   /**
    * Direction in which we traveled to get to this location.
    */
-  public Direction[][] from = new Direction[MAP_WIDTH][MAP_HEIGHT];
+  public Direction[][] from = new Direction[WRAP_X][WRAP_Y];
   /**
    * Distance (times 5) to this location.
    */
-  public int distance[][] = new int[MAP_WIDTH][MAP_HEIGHT];
+  public int distance[][] = new int[WRAP_X][WRAP_Y];
 
   /**
    * Estimated distance from source + distance to dest.
    */
   // private final int estimate[][] = new int[MAP_WIDTH][MAP_HEIGHT];
 
-  private final boolean expanded[][] = new boolean[MAP_WIDTH][MAP_HEIGHT];
+  private final boolean expanded[][] = new boolean[WRAP_X][WRAP_Y];
 
-  private final BucketQueue<MapLocation> queue = new BucketQueue<MapLocation>(5 * MAP_SIZE, 4);
+  private final BucketQueue<MapLocation> queue = new BucketQueue<MapLocation>(5 * MAP_MAX_SIZE, 4);
 
   public DStar() {
     // hack to go around the hqs
@@ -54,15 +54,20 @@ public class DStar extends GradientMover {
   }
 
   public void insert(MapLocation source, int distance) {
+    int x = source.x % WRAP_X;
+    int y = source.y % WRAP_Y;
+
     int e = distance + naiveDistance(source, dest);
     queue.insert(e, source);
-    this.distance[source.x][source.y] = distance;
+    this.distance[x][y] = distance;
     // leave as null to cause exceptions if we accidentally try to use it?
-    from[source.x][source.y] = Direction.NONE;
+    from[x][y] = Direction.NONE;
   }
 
   public void insert(MapLocation source, int distance, Direction dir) {
-    int x = source.x, y = source.y;
+    int x = source.x % WRAP_X;
+    int y = source.y % WRAP_Y;
+
     expanded[x][y] = false;
     this.distance[x][y] = distance;
     int e = distance + naiveDistance(source, dest);
@@ -118,6 +123,7 @@ public class DStar extends GradientMover {
          * }
          */
 
+        // TODO: Huge problem here; the terrain tile might be OFF_MAP or UNKNOWN
         weight = WEIGHT[RC.senseTerrainTile(next).ordinal()];
 
         dir = from[x][y];

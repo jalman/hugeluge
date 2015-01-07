@@ -1,5 +1,6 @@
 package messagetest.soldiers;
 
+import static battlecode.common.GameConstants.*;
 import static messagetest.utils.Utils.*;
 import messagetest.*;
 import messagetest.messaging.*;
@@ -24,7 +25,7 @@ public class SoldierBehavior extends RobotBehavior {
   Mover mover = new Mover();
 
   static ArraySet<MapLocation> messagedEnemyRobots = new ArraySet<MapLocation>(100);
-  static int[][] enemyLastSeen = new int[MAP_WIDTH][MAP_HEIGHT];
+  static int[][] enemyLastSeen = new int[MAP_MAX_WIDTH][MAP_MAX_HEIGHT];
 
   static ArraySet<MapLocation> attackLocations = new ArraySet<MapLocation>(100);
   static ArraySet<MapLocation> microLocations = new ArraySet<MapLocation>(100);
