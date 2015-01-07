@@ -1,15 +1,7 @@
 package messagetest.hq;
 
-import static messagetest.utils.Utils.ALLY_TEAM;
-import static messagetest.utils.Utils.ENEMY_TEAM;
-import static messagetest.utils.Utils.RC;
-import static messagetest.utils.Utils.curX;
-import static messagetest.utils.Utils.curY;
-import battlecode.common.Clock;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import static messagetest.utils.Utils.*;
+import battlecode.common.*;
 
 public class AttackSystem {
   private final boolean[][] IN_RANGE = {
@@ -34,7 +26,7 @@ public class AttackSystem {
   }
 
   public void tryAttack() {
-    // if (!RC.isActive()) return;
+    if (!RC.isWeaponReady()) return;
 
     RobotInfo[] robots = RC.senseNearbyRobots(18);
     if (!attackDelay && robots.length > 0) {
