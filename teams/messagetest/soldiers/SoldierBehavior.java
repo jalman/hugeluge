@@ -66,7 +66,7 @@ public class SoldierBehavior extends RobotBehavior {
 
   @Override
   public void beginRound() throws GameActionException {
-    updateUnitUtils();
+    updateUtils();
     attackLocations.clear();
     microLocations.clear();
     messagedEnemyRobots.clear();

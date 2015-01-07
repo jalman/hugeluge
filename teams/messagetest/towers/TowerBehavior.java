@@ -16,7 +16,7 @@ public class TowerBehavior extends RobotBehavior {
 
   @Override
   public void beginRound() throws GameActionException {
-    updateBuildingUtils();
+    updateUtils();
   }
 
   @Override
