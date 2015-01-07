@@ -5,11 +5,12 @@ import static messagetest.utils.Utils.*;
 import java.util.*;
 
 import messagetest.*;
+import messagetest.builder.*;
 import messagetest.nav.*;
 import messagetest.utils.*;
 import battlecode.common.*;
 
-public class HQBehavior extends RobotBehavior {
+public class HQBehavior extends BuilderBehavior {
 
   // HQAction[] buildOrder;
   // int buildOrderProgress = 0;
@@ -17,7 +18,7 @@ public class HQBehavior extends RobotBehavior {
   /**
    * This is arbitrary and should be tuned.
    */
-  public static final int MAX_ROBOTS = 10;
+  public static final int MAX_BEAVERS = 10;
   static RobotInfo[] alliedRobots;
   static int numBots; // , numNoiseTowers, numPastrs, numSoldiers;
 
@@ -59,7 +60,7 @@ public class HQBehavior extends RobotBehavior {
     // takenPASTRLocs = new FastIterableLocSet();
     knownAlliedIDs[ID] = true;
 
-    macro();
+    // macro();
     // pickStrategy();
   }
 
@@ -68,7 +69,7 @@ public class HQBehavior extends RobotBehavior {
 
   @Override
   public void beginRound() throws GameActionException {
-    Utils.updateBuildingUtils();
+    Utils.updateUtils();
     alliedRobots = RC.senseNearbyRobots(currentLocation, 10000, ALLY_TEAM);
     numBots = alliedRobots.length;
     turnsSinceLastSpawn++;
@@ -152,70 +153,21 @@ public class HQBehavior extends RobotBehavior {
     return (float) ourSquaresFree / ourSquaresTotal - (float) theirSquaresFree / theirSquaresTotal;
   }
 
-  /**
-   * Handle upgrades and robots.
-   */
-  private static void macro() {
-    // if we just spawned someone, check what his id is
-    if (soldierSpawnDirection != Direction.NONE) {
-      MapLocation spawnLocation = currentLocation.add(soldierSpawnDirection);
-      RobotInfo[] nearbyBots = RC.senseNearbyRobots(spawnLocation, 2, ALLY_TEAM);
-      for (int i = nearbyBots.length - 1; i >= 0; --i) {
-        int id = nearbyBots[i].ID;
-        if (!knownAlliedIDs[id]) {
-          mostRecentlySpawnedSoldierID = id;
-          knownAlliedIDs[id] = true;
-          break;
-        }
+  private void macro() {
+    if (!RC.isCoreReady()) return;
+
+    RobotInfo[] allies = RC.senseNearbyRobots(Integer.MAX_VALUE, ALLY_TEAM);
+
+    int numBeavers = 0;
+    for (RobotInfo info : allies) {
+      if (info.type == RobotType.BEAVER) {
+        ++numBeavers;
       }
-      soldierSpawnDirection = Direction.NONE;
     }
 
-    // if (!RC.isActive()) return;
-
-    try {
-      buildSoldier();
-    } catch (GameActionException e) {
-      // e.printStackTrace();
+    if (numBeavers < MAX_BEAVERS) {
+      this.buildRobot(RobotType.BEAVER);
     }
-  }
-
-  /**
-   * Tries to build a Soldier.
-   * @return Whether successful.
-   * @throws GameActionException
-   */
-  private static boolean buildSoldier() throws GameActionException {
-    return buildSoldier(ALLY_HQ.directionTo(ENEMY_HQ));
-  }
-
-  /**
-   * Tries to build a Soldier.
-   * @param dir The direction in which to build.
-   * @return Whether successful.
-   * @throws GameActionException
-   */
-  private static boolean buildSoldier(Direction dir) throws GameActionException {
-    if (RC.senseNearbyRobots(100000, ALLY_TEAM).length < MAX_ROBOTS) {
-      // Spawn soldier
-      for (int i = 0; i < 8; i++) {
-        // if square is movable, spawn soldier there and send initial messages
-        if (RC.canMove(dir)) {
-          // sendMessagesOnBuild();
-          RC.spawn(dir, RobotType.SOLDIER);
-          soldierSpawnDirection = dir;
-          numSoldiersSpawned++;
-
-          messagingSystem.writeDeath(numSoldiersSpawned - numBots);
-          turnsSinceLastSpawn = 0;
-          return true;
-        }
-        // otherwise keep rotating until this is possible
-        dir = dir.rotateRight();
-      }
-      // message guys to get out of the way??
-    }
-    return false;
   }
 
 }

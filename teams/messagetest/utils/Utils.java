@@ -98,6 +98,8 @@ public class Utils {
   public static int SENSOR_RADIUS2;
   public static RobotInfo[] enemyRobots = new RobotInfo[0];
 
+  // public static RobotInfo[] allyRobots = new RobotInfo[0];
+
   public static void initUtils(RobotController rc) {
     RC = rc;
     TYPE = rc.getType();
@@ -136,40 +138,18 @@ public class Utils {
 
     messagingSystem = new MessagingSystem();
 
-    // TODO: different robot types now
-    if (TYPE == RobotType.SOLDIER) {
-      updateUnitUtils();
-    } else {
-      updateBuildingUtils();
-    }
-
+    updateUtils();
   }
 
   /**
    * Called at the beginning of each round by buildings.
    */
-  public static void updateBuildingUtils() {
-    enemyRobots =
-        RC.senseNearbyRobots(currentLocation, SENSOR_RADIUS2, ENEMY_TEAM);
-    currentRound = Clock.getRoundNum();
-    bytecodes = Clock.getBytecodeNum();
-  }
-
-  /**
-   * Called at the beginning of each round by moving units.
-   */
-  public static void updateUnitUtils() {
-    currentLocation = RC.getLocation();
-    curX = currentLocation.x;
-    curY = currentLocation.y;
-
+  public static void updateUtils() {
     enemyRobots = RC.senseNearbyRobots(currentLocation, SENSOR_RADIUS2, ENEMY_TEAM);
+    // allyRobots = RC.senseNearbyRobots(currentLocation, SENSOR_RADIUS2, ALLY_TEAM);
     currentRound = Clock.getRoundNum();
     bytecodes = Clock.getBytecodeNum();
   }
-
-  // private static RobotInfo[] enemyRobotInfo = new RobotInfo[0];
-  // private static int roundInfoUpdated = -1;
 
   /**
    * @return whether it's my first round executing or not
