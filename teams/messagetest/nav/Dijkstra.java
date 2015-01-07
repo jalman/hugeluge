@@ -55,13 +55,7 @@ public class Dijkstra {
    * @return Whether we found a destination.
    */
   public boolean compute(int bytecodes, boolean broadcast, MapLocation... dests) {
-    boolean[][] end = new boolean[WRAP_X][WRAP_Y];
-    MapLocation dest;
-    for (int i = dests.length - 1; i >= 0; --i) {
-      dest = dests[i];
-      end[dest.x][dest.y] = true;
-    }
-    return compute(end, bytecodes, broadcast);
+    return compute(new LocSet(dests), bytecodes, broadcast);
   }
 
   /**
@@ -71,11 +65,12 @@ public class Dijkstra {
    * @param broadcast Whether to broadcast the results (used by the HQ).
    * @return Whether we found a destination.
    */
-  public boolean compute(boolean[][] end, int bytecodes, boolean broadcast) {
+  public boolean compute(LocSet end, int bytecodes, boolean broadcast) {
     // cache variables
     int min, w, x, y;
     int[] weight;
-    MapLocation next, nbr, prev, p;
+    MapLocation next, nbr;
+    // MapLocation prev, p;
     Direction dir;
     final BucketQueue<MapLocation> queue = this.queue;
     final int[][] distance = this.distance;
@@ -189,7 +184,7 @@ public class Dijkstra {
     path.insert(loc);
 
     while (!sources.contains(loc)) {
-      loc = loc.subtract(from[loc.x][loc.y]);
+      loc = loc.subtract(from[loc.x % WRAP_X][loc.y % WRAP_Y]);
       path.insert(loc);
     }
 
