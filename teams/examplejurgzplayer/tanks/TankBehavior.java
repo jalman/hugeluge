@@ -1,4 +1,4 @@
-package examplejurgzplayer.beavers;
+package examplejurgzplayer.tanks;
 
 import static examplejurgzplayer.utils.Utils.*;
 import examplejurgzplayer.*;
@@ -9,10 +9,10 @@ import examplejurgzplayer.nav.*;
 import examplejurgzplayer.utils.*;
 import battlecode.common.*;
 
-public class BeaverBehavior extends RobotBehavior {
+public class TankBehavior extends RobotBehavior {
 
   enum Mode {
-    COMBAT, MOVE, FARM, EXPLORE, BUILD_PASTURE, DEFEND_TOWER, BUILD_BARRACKS, BUILD_TANK_FACTORY
+    COMBAT, MOVE, FARM, EXPLORE, BUILD_PASTURE, DEFEND_TOWER
   };
 
   // state machine stuff
@@ -33,7 +33,7 @@ public class BeaverBehavior extends RobotBehavior {
 
   // private final Micro micro = new Micro(this);
 
-  public BeaverBehavior() {
+  public TankBehavior() {
   }
 
   @Override
@@ -105,8 +105,8 @@ public class BeaverBehavior extends RobotBehavior {
   private void think() throws GameActionException {
     //for answering pleas for help
     boolean hasNearbyPlea = false;
-    for (int i=0; i<BeaverBehavior.microLocations.size; ++i) {
-      MapLocation m = BeaverBehavior.microLocations.get(i);
+    for (int i=0; i<TankBehavior.microLocations.size; ++i) {
+      MapLocation m = TankBehavior.microLocations.get(i);
 
       if (currentLocation.distanceSquaredTo(m) <= 10*10) {
         hasNearbyPlea = true;
@@ -116,16 +116,6 @@ public class BeaverBehavior extends RobotBehavior {
 
     if (enemyRobots.length > (RC.canSenseLocation(ENEMY_HQ) ? 1 : 0) || hasNearbyPlea) {
       setMode(Mode.COMBAT);
-      return;
-    }
-    
-    int read = RC.readBroadcast(123); //todo: use messaging system for this
-    if (read != 1 && read != 2) {
-      setMode(Mode.BUILD_BARRACKS);
-      return;
-    }
-    if (read == 1) {
-      setMode(Mode.BUILD_TANK_FACTORY);
       return;
     }
 
@@ -217,26 +207,8 @@ public class BeaverBehavior extends RobotBehavior {
   private MapLocation findExploreLocation() throws GameActionException {
     return messagingSystem.readRallyPoint();
   }
-  
-  private void buildBuilding(RobotType buildingType) throws GameActionException {
-    RC.setIndicatorString(2, "Trying to build " + buildingType.toString() + " on turn " + Clock.getRoundNum());
-    for(Direction d : Direction.values()) {
-      if(RC.canBuild(d, buildingType)) {
-        RC.build(d, buildingType);
-        RC.broadcast(123, RC.readBroadcast(123) + 1); //atomic operation!! TODO: use messaging system
-        return;
-      }
-    }
-    for(Direction d : Direction.values()) {
-      if(RC.canMove(d)) {
-        RC.move(d);
-        return;
-      }
-    }    
-  }
 
   private void act() throws GameActionException {
-    RC.setIndicatorString(0, mode.toString());
     switch (mode) {
       case COMBAT:
         // if (!RC.isActive()) return;
@@ -258,12 +230,6 @@ public class BeaverBehavior extends RobotBehavior {
         break;
       case DEFEND_TOWER:
     	mover.move(target);
-        break;
-      case BUILD_TANK_FACTORY:
-        buildBuilding(RobotType.TANKFACTORY);
-        break;
-      case BUILD_BARRACKS:
-        buildBuilding(RobotType.BARRACKS);
         break;
       default:
         break;

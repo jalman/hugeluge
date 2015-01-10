@@ -1,7 +1,9 @@
 package examplejurgzplayer;
 
+import examplejurgzplayer.tankfactories.TankFactoryBehavior;
+import examplejurgzplayer.tanks.TankBehavior;
 import examplejurgzplayer.towers.TowerBehavior;
-
+import examplejurgzplayer.barrackses.BarracksBehavior;
 import examplejurgzplayer.beavers.BeaverBehavior;
 import examplejurgzplayer.hq.*;
 import examplejurgzplayer.soldiers.*;
@@ -25,6 +27,15 @@ public class RobotPlayer {
         break;
       case BEAVER:
         robot = new BeaverBehavior();
+        break;
+      case TANK:
+        robot = new TankBehavior();
+        break;
+      case BARRACKS:
+        robot = new BarracksBehavior();
+        break;
+      case TANKFACTORY:
+        robot = new TankFactoryBehavior();
         break;
       default: // autokill
         robot = new SoldierBehavior();

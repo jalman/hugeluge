@@ -225,7 +225,8 @@ public class HQBehavior extends RobotBehavior {
     if (!RC.isCoreReady()) return;
 
     try {
-      buildBeaver();
+      if(Clock.getRoundNum() < 30)
+        buildBeaver();
     } catch (GameActionException e) {
       // e.printStackTrace();
     }
