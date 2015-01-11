@@ -1,4 +1,4 @@
-package examplejurgzplayer.beavers;
+package examplejurgzplayer.drones;
 
 import static examplejurgzplayer.utils.Utils.*;
 import examplejurgzplayer.*;
@@ -9,10 +9,10 @@ import examplejurgzplayer.nav.*;
 import examplejurgzplayer.utils.*;
 import battlecode.common.*;
 
-public class BeaverBehavior extends RobotBehavior {
+public class DroneBehavior extends RobotBehavior {
 
   enum Mode {
-    COMBAT, MOVE, FARM, EXPLORE, BUILD_PASTURE, DEFEND_TOWER, BUILD_BARRACKS, BUILD_TANK_FACTORY, BUILD_HELIPAD, BUILDING
+    COMBAT, MOVE, FARM, EXPLORE, BUILD_PASTURE, DEFEND_TOWER
   };
 
   // state machine stuff
@@ -33,7 +33,7 @@ public class BeaverBehavior extends RobotBehavior {
 
   // private final Micro micro = new Micro(this);
 
-  public BeaverBehavior() {
+  public DroneBehavior() {
   }
 
   @Override
@@ -105,8 +105,8 @@ public class BeaverBehavior extends RobotBehavior {
   private void think() throws GameActionException {
     //for answering pleas for help
     boolean hasNearbyPlea = false;
-    for (int i=0; i<BeaverBehavior.microLocations.size; ++i) {
-      MapLocation m = BeaverBehavior.microLocations.get(i);
+    for (int i=0; i<DroneBehavior.microLocations.size; ++i) {
+      MapLocation m = DroneBehavior.microLocations.get(i);
 
       if (currentLocation.distanceSquaredTo(m) <= 10*10) {
         hasNearbyPlea = true;
@@ -117,13 +117,6 @@ public class BeaverBehavior extends RobotBehavior {
     if (enemyRobots.length > (RC.canSenseLocation(ENEMY_HQ) ? 1 : 0) || hasNearbyPlea) {
       setMode(Mode.COMBAT);
       return;
-    }
-    
-    if(Clock.getRoundNum()<10) {
-    	setMode(Mode.BUILD_HELIPAD);
-    }
-    if(mode == Mode.BUILD_HELIPAD) {
-    	return;
     }
 
     // TODO: use priorities for where to be?
@@ -214,26 +207,8 @@ public class BeaverBehavior extends RobotBehavior {
   private MapLocation findExploreLocation() throws GameActionException {
     return messagingSystem.readRallyPoint();
   }
-  
-  private void buildBuilding(RobotType buildingType) throws GameActionException {
-    RC.setIndicatorString(2, "Trying to build " + buildingType.toString() + " on turn " + Clock.getRoundNum());
-    for(Direction d : Direction.values()) {
-      if(RC.canBuild(d, buildingType)) {
-        RC.build(d, buildingType);
-        setMode(Mode.BUILDING);
-        return;
-      }
-    }
-    for(Direction d : Direction.values()) {
-      if(RC.canMove(d)) {
-        RC.move(d);
-        return;
-      }
-    }    
-  }
 
   private void act() throws GameActionException {
-    RC.setIndicatorString(0, mode.toString());
     switch (mode) {
       case COMBAT:
         // if (!RC.isActive()) return;
@@ -256,15 +231,6 @@ public class BeaverBehavior extends RobotBehavior {
       case DEFEND_TOWER:
     	mover.move(target);
         break;
-      case BUILD_TANK_FACTORY:
-        buildBuilding(RobotType.TANKFACTORY);
-        break;
-      case BUILD_BARRACKS:
-        buildBuilding(RobotType.BARRACKS);
-        break;
-      case BUILD_HELIPAD:
-          buildBuilding(RobotType.HELIPAD);
-          break;
       default:
         break;
     }

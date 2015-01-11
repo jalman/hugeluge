@@ -5,6 +5,8 @@ import examplejurgzplayer.tanks.TankBehavior;
 import examplejurgzplayer.towers.TowerBehavior;
 import examplejurgzplayer.barrackses.BarracksBehavior;
 import examplejurgzplayer.beavers.BeaverBehavior;
+import examplejurgzplayer.drones.DroneBehavior;
+import examplejurgzplayer.heslipad.HelipadBehavior;
 import examplejurgzplayer.hq.*;
 import examplejurgzplayer.soldiers.*;
 import examplejurgzplayer.utils.*;
@@ -31,12 +33,18 @@ public class RobotPlayer {
       case TANK:
         robot = new TankBehavior();
         break;
+      case DRONE:
+          robot = new DroneBehavior();
+          break;
       case BARRACKS:
         robot = new BarracksBehavior();
         break;
       case TANKFACTORY:
         robot = new TankFactoryBehavior();
         break;
+      case HELIPAD:
+          robot = new HelipadBehavior();
+          break;
       default: // autokill
         robot = new SoldierBehavior();
         return;

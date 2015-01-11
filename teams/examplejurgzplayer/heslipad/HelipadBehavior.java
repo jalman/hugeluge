@@ -1,4 +1,4 @@
-package examplejurgzplayer.tankfactories;
+package examplejurgzplayer.heslipad;
 
 import static examplejurgzplayer.utils.Utils.*;
 
@@ -18,12 +18,12 @@ import examplejurgzplayer.utils.*;
 import examplejurgzplayer.utils.Utils.SymmetryType;
 import battlecode.common.*;
 
-public class TankFactoryBehavior extends RobotBehavior {
+public class HelipadBehavior extends RobotBehavior {
 
   // HQAction[] buildOrder;
   // int buildOrderProgress = 0;
 
-  public TankFactoryBehavior() {
+  public HelipadBehavior() {
   }
 
   @Override
@@ -38,7 +38,7 @@ public class TankFactoryBehavior extends RobotBehavior {
   @Override
   public void run() throws GameActionException {
     for(Direction d : Direction.values()) {
-      if(spawnRobot(d, RobotType.TANK)) {
+      if(spawnRobot(d, RobotType.DRONE)) {
         break;
       }
     }
