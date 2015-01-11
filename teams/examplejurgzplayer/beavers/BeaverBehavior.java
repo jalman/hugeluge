@@ -119,7 +119,7 @@ public class BeaverBehavior extends RobotBehavior {
       return;
     }
     
-    if(Clock.getRoundNum()<10) {
+    if(Clock.getRoundNum()<1) {
     	setMode(Mode.BUILD_HELIPAD);
     }
     if(mode == Mode.BUILD_HELIPAD) {
@@ -221,6 +221,7 @@ public class BeaverBehavior extends RobotBehavior {
       if(RC.canBuild(d, buildingType)) {
         RC.build(d, buildingType);
         setMode(Mode.BUILDING);
+        RC.setIndicatorString(2, "I AM BUILDING");
         return;
       }
     }
