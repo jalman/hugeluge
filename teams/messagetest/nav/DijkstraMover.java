@@ -28,9 +28,15 @@ public class DijkstraMover extends GradientMover {
       }
     } catch (GameActionException e) {
       // TODO Auto-generated catch block
-      // e.printStackTrace();
+      e.printStackTrace();
     }
     return Integer.MAX_VALUE;
+  }
+
+  @Override
+  public void setTarget(MapLocation finish) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Dijkstra mover only moves to Dijkstra center.");
   }
 
 }

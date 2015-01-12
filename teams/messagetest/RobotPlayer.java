@@ -1,5 +1,6 @@
 package messagetest;
 
+import messagetest.beaver.*;
 import messagetest.hq.*;
 import messagetest.soldiers.*;
 import messagetest.towers.*;
@@ -19,7 +20,7 @@ public class RobotPlayer {
         robot = new TowerBehavior();
         break;
       case BEAVER:
-        robot = new SoldierBehavior();
+        robot = new BeaverBehavior();
         break;
       case SOLDIER:
         robot = new SoldierBehavior();

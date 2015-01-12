@@ -115,7 +115,7 @@ public class Dijkstra {
 
         if (broadcast) {
           try {
-            messagingSystem.writePathingInfo(next, dir, min, null /* parent[x][y] */);
+            messagingSystem.writePathingInfo(next, dir, min);
           } catch (GameActionException e) {
             // e.printStackTrace();
           }
@@ -128,7 +128,7 @@ public class Dijkstra {
 
 
         // TODO: Huge problem here; the terrain tile might be OFF_MAP or UNKNOWN
-        weight = WEIGHT[RC.senseTerrainTile(next).ordinal()];
+        // weight = WEIGHT[RC.senseTerrainTile(next).ordinal()];
 
         int i;
         if (dir == null) {
@@ -145,7 +145,7 @@ public class Dijkstra {
         for (; --i >= 0; dir = dir.rotateRight()) {
           nbr = next.add(dir);
           if (RC.senseTerrainTile(nbr).isTraversable()) {
-            w = min + weight[dir.ordinal()];
+            w = min + 1;// weight[dir.ordinal()];
 
             x = nbr.x % WRAP_X;
             y = nbr.y % WRAP_Y;

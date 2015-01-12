@@ -1,6 +1,5 @@
 package messagetest.messaging;
 
-import static battlecode.common.GameConstants.*;
 import static messagetest.utils.Utils.*;
 import messagetest.utils.*;
 import battlecode.common.*;
@@ -28,7 +27,9 @@ public class MessagingSystem {
     BUILD_SECOND_SIMULTANEOUS_PASTURE(3), // target soldier ID, (x, y)
     BUILDING_PASTURE(2),
     BUILDING_SECOND_SIMULTANEOUS_PASTURE(3), // (x, y)
-    PASTURE_DENY_REQUEST(2);
+    PASTURE_DENY_REQUEST(2),
+    BUILD(3), // x, y, type
+    ;
 
     public final int type = this.ordinal();
 
@@ -66,8 +67,9 @@ public class MessagingSystem {
     RALLY_POINT(2),
     KILL_COUNT(1),
     DEATH_COUNT(1),
-    PATHING1(MAP_MAX_SIZE),
-    PATHING2(MAP_MAX_SIZE), ;
+    MAP_BOUNDS(4),
+    MAP_TILES(MAP_MAX_SIZE),
+    PATHING1(MAP_MAX_SIZE), ;
 
     public final int type = this.ordinal();
     public final int length;
@@ -89,7 +91,7 @@ public class MessagingSystem {
   static {
     int currentChannel = GameConstants.BROADCAST_MAX_CHANNELS;
     ReservedMessageType[] rmt = ReservedMessageType.values();
-    for (int i = rmt.length - 1; i >= 0; i--) {
+    for (int i = rmt.length; --i >= 0;) {
       currentChannel -= rmt[i].length;
       reserved_channel_indices[i] = currentChannel;
     }
@@ -151,7 +153,8 @@ public class MessagingSystem {
   }
 
   /**
-   * Writes a reserved message at rm.channel() + offset; DOES NOT CHECK IF THIS GOES OUT OF THE ALLOTTED
+   * Writes a reserved message at rm.channel() + offset.
+   * DOES NOT CHECK IF THIS GOES OUT OF THE ALLOTTED
    * CHANNELS FOR ReservedMessageType rm!!!!
    * @param rm A Reserved MessageType
    * @param offset Channel offset to broadcast at
@@ -340,6 +343,10 @@ public class MessagingSystem {
     writeMessage(MessageType.PASTURE_DENY_REQUEST, loc.x, loc.y);
   }
 
+  public static int getOffset(MapLocation loc) {
+    return wrapX(loc.x) * WRAP_Y + wrapY(loc.y);
+  }
+
   /**
    * Same as Direction.values() but shifted by 1 so that 0 maps to null.
    */
@@ -359,24 +366,16 @@ public class MessagingSystem {
   private static final int shift = 16;
   private static final int mask = (1 << shift) - 1;
 
-  public void writePathingInfo(MapLocation loc, Direction dir, int distance, MapLocation parent)
+  public void writePathingInfo(MapLocation loc, Direction dir, int distance)
       throws GameActionException {
-    int offset = loc.x * MAP_MAX_HEIGHT + loc.y;
-    RC.broadcast(ReservedMessageType.PATHING1.channel() + offset,
+    RC.broadcast(ReservedMessageType.PATHING1.channel() + getOffset(loc),
         dirToInt(dir) << shift | distance);
     // RC.broadcast(ReservedMessageType.PATHING2.channel() + offset, parent.x << shift | parent.y);
   }
 
   public Pair<Direction, Integer> readPathingInfo(MapLocation loc) throws GameActionException {
-    int broadcast =
-        RC.readBroadcast(ReservedMessageType.PATHING1.channel() + loc.x * MAP_MAX_HEIGHT + loc.y);
+    int broadcast = RC.readBroadcast(ReservedMessageType.PATHING1.channel() + getOffset(loc));
     return new Pair<Direction, Integer>(INT_TO_DIR[broadcast >> shift], broadcast & mask);
-  }
-
-  public MapLocation readParent(MapLocation loc) throws GameActionException {
-    int broadcast =
-        RC.readBroadcast(ReservedMessageType.PATHING2.channel() + loc.x * MAP_MAX_HEIGHT + loc.y);
-    return new MapLocation(broadcast >> shift, broadcast & mask);
   }
 
   public void writeKill() throws GameActionException {
@@ -398,4 +397,33 @@ public class MessagingSystem {
     int channel = ReservedMessageType.DEATH_COUNT.channel();
     return RC.readBroadcast(channel);
   }
+
+  public void writeMapBounds() throws GameActionException {
+    writeReservedMessage(ReservedMessageType.MAP_BOUNDS, MAP_MIN_X, MAP_MIN_Y, MAP_MAX_X, MAP_MAX_Y);
+  }
+
+  public void writeMapTile(MapLocation loc, TerrainTile tile) throws GameActionException {
+    writeReservedMessageAtOffset(ReservedMessageType.MAP_TILES, getOffset(loc), 1 + tile.ordinal());
+  }
+
+  /**
+   * Same as TerrainTile.values() but shifted by 1 so that 0 maps to null.
+   */
+  private static final TerrainTile[] INT_TO_TILE = new TerrainTile[TERRAIN_TILES.length + 1];
+
+  static {
+    INT_TO_TILE[0] = null;
+    for (int i = 0; i < TERRAIN_TILES.length; i++) {
+      INT_TO_TILE[i + 1] = TERRAIN_TILES[i];
+    }
+  }
+
+  public TerrainTile readMapTile(MapLocation loc) throws GameActionException {
+    return INT_TO_TILE[readReservedMessage(ReservedMessageType.MAP_TILES, getOffset(loc))];
+  }
+
+  public void writeBuildMessage(MapLocation loc, RobotType type) throws GameActionException {
+    writeMessage(MessageType.BUILD, loc.x, loc.y, type.ordinal());
+  }
+
 }

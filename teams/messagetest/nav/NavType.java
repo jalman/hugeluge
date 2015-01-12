@@ -2,9 +2,7 @@ package messagetest.nav;
 
 public enum NavType {
 
-  BUG(new BugMoveFun()),
-  BUG_2(new BugMoveFun2()),
-  DUMB(new DumbMove()),
+  DUMB(new DumbMover()),
   HQ_DIJKSTRA(null);
 
   public final NavAlg navAlg;

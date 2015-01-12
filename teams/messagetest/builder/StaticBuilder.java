@@ -1,12 +1,10 @@
 package messagetest.builder;
 
 import static messagetest.utils.Utils.*;
-import messagetest.*;
 import battlecode.common.*;
 
-public abstract class BuilderBehavior extends RobotBehavior {
-
-  protected Direction buildDir = null;
+public class StaticBuilder {
+  private static Direction buildDir = null;
 
   /**
    * Tries to build a Robot.
@@ -14,8 +12,8 @@ public abstract class BuilderBehavior extends RobotBehavior {
    * @param type The RobotType.
    * @return Whether successful.
    */
-  protected boolean buildRobot(RobotType type) {
-    System.out.println("Building " + type);
+  public static boolean buildRobot(RobotType type) {
+    // System.out.println("Building " + type);
 
     if (buildDir == null) {
       buildDir = currentLocation.directionTo(ENEMY_HQ);
@@ -33,7 +31,7 @@ public abstract class BuilderBehavior extends RobotBehavior {
         return true;
       }
 
-      System.out.println("Couldn't build in " + buildDir);
+      // System.out.println("Couldn't build in " + buildDir);
       // otherwise keep rotating until this is possible
       buildDir = buildDir.rotateRight();
     }
@@ -41,4 +39,5 @@ public abstract class BuilderBehavior extends RobotBehavior {
     // message guys to get out of the way??
     return false;
   }
+
 }

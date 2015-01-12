@@ -28,4 +28,9 @@ public class ReverseDijkstraMover extends GradientMover {
     return Integer.MAX_VALUE;
   }
 
+  @Override
+  public void setTarget(MapLocation finish) {
+    // doesn't do anything
+  }
+
 }

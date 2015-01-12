@@ -1,13 +1,12 @@
 package messagetest.nav;
 
 import static messagetest.utils.Utils.*;
-import messagetest.utils.*;
 import battlecode.common.*;
 
 public class HybridMover {
   public static MapLocation DIJKSTRA_CENTER = ALLY_HQ;
 
-  NavAlg simple = new BugMoveFun2();
+  NavAlg simple = new DumbMover();
 
   MapLocation dest = null;
 
@@ -34,16 +33,14 @@ public class HybridMover {
 
       // RC.setIndicatorString(2, "Computing outPath");
 
-      while (true) {
-        if (Clock.getBytecodeNum() > bytecodes) return;
-
+      while (Clock.getBytecodeNum() <= bytecodes) {
         next = next.subtract(dir);
 
         if (next.equals(DIJKSTRA_CENTER)) break;
 
         dir = messagingSystem.readPathingInfo(next).first;
 
-        int diff = getActionDelay(next, dir);
+        int diff = 1;// getActionDelay(next, dir);
         diff = Math.max(1, diff / (1 + (++length) / 10));
 
         distance += diff;
@@ -87,7 +84,7 @@ public class HybridMover {
   private void simpleMove(MapLocation loc) throws GameActionException {
     if (!loc.equals(simpleTarget)) {
       simpleTarget = loc;
-      simple.recompute(loc);
+      simple.setTarget(loc);
     }
 
     Direction dir = simple.getNextDir();
@@ -108,25 +105,27 @@ public class HybridMover {
   public void move() throws GameActionException {
     if (currentLocation.equals(dest)) return;
 
-    Computation computation = getComputation();
-    computation.compute();
+    simpleMove(dest);
 
-    DStar dstar = computation.dstar;
-
-    if (!dstar.visited(currentLocation)) {
-      Pair<Direction, Integer> pathingInfo = messagingSystem.readPathingInfo(currentLocation);
-      if (pathingInfo.first != null && computation.length > 1 &&
-          pathingInfo.second <= naiveDistance(currentLocation, dest)) {
-        // RC.setIndicatorString(1, "move to hq");
-        DijkstraMover.getDijkstraMover().move();
-      } else {
-        // RC.setIndicatorString(1, "simple move");
-        simpleMove(dest);
-      }
-    } else {
-      // RC.setIndicatorString(1, "dstar move");
-      dstar.move();
-    }
+    /*
+     * Computation computation = getComputation();
+     * computation.compute();
+     * DStar dstar = computation.dstar;
+     * if (!dstar.visited(currentLocation)) {
+     * Pair<Direction, Integer> pathingInfo = messagingSystem.readPathingInfo(currentLocation);
+     * if (pathingInfo.first != null && computation.length > 1 &&
+     * pathingInfo.second <= naiveDistance(currentLocation, dest)) {
+     * // RC.setIndicatorString(1, "move to hq");
+     * DijkstraMover.getDijkstraMover().move();
+     * } else {
+     * // RC.setIndicatorString(1, "simple move");
+     * simpleMove(dest);
+     * }
+     * } else {
+     * // RC.setIndicatorString(1, "dstar move");
+     * dstar.move();
+     * }
+     */
   }
 
   public boolean arrived() {

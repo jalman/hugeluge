@@ -6,11 +6,12 @@ import battlecode.common.*;
 public class Mover {
   private MapLocation dest;
   private NavAlg navAlg;
-  private NavType navType;
+
+  // private NavType navType;
 
   public Mover() {
     this.dest = null;
-    setNavType(NavType.BUG_2);
+    setNavType(NavType.DUMB);
   }
 
   public Mover(NavType navType) {
@@ -18,14 +19,12 @@ public class Mover {
     setNavType(navType);
   }
 
-  // public Mover(RobotBehavior rb) {
-  // this.dest = null;
-  // this.navAlg = NavType.BUG_HIGH_DIG.navAlg;
-  // this.defuseMoving = true;
-  // }
+  public Mover(NavAlg navAlg) {
+    this.navAlg = navAlg;
+  }
 
   public void setNavType(NavType navType) {
-    this.navType = navType;
+    // this.navType = navType;
     this.navAlg = navType.navAlg;
   }
 
@@ -33,7 +32,7 @@ public class Mover {
     // RC.setIndicatorString(2, "Mover target set to: " + dest);
     if (!dest.equals(this.dest)) {
       this.dest = dest;
-      navAlg.recompute(dest);
+      navAlg.setTarget(dest);
     }
   }
 
@@ -48,9 +47,13 @@ public class Mover {
     return false;
   }
 
+  public void move(MapLocation dest) {
+    setTarget(dest);
+    move();
+  }
+
   /**
    * Try to move.
-   * @param sneak:
    * @return
    */
   public void move() {
@@ -63,22 +66,27 @@ public class Mover {
 
     if (arrived()) return;
 
-    if (RC.isCoreReady()) {
-      Direction d;
-      d = navAlg.getNextDir();
-      if (d != null && d != Direction.NONE && d != Direction.OMNI) {
-        if (RC.canMove(d)) {
-          try {
-            RC.move(d);
-          } catch (GameActionException e) {
-            e.printStackTrace();
-          }
-        } else if (currentLocation.distanceSquaredTo(dest) <= 2) {
-          setTarget(currentLocation);
+    if (!RC.isCoreReady()) return;
+
+    Direction d;
+    d = navAlg.getNextDir();
+    if (d != null && d != Direction.NONE && d != Direction.OMNI) {
+      if (RC.canMove(d)) {
+        try {
+          RC.move(d);
+        } catch (GameActionException e) {
+          e.printStackTrace();
         }
+      } else if (currentLocation.distanceSquaredTo(dest) <= 2) {
+        setTarget(currentLocation);
       }
     }
+
     // System.out.println("Bytecodes used by Mover.execute() = " +
     // Integer.toString(bc-Clock.getBytecodesLeft()));
+  }
+
+  public void compute(int bytecodes) {
+    navAlg.compute(bytecodes);
   }
 }

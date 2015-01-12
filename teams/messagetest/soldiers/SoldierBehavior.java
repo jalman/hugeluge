@@ -58,7 +58,7 @@ public class SoldierBehavior extends RobotBehavior {
       @Override
       public void handleMessage(int[] message) {
         MapLocation loc = new MapLocation(message[0], message[1]);
-        enemyLastSeen[loc.x][loc.y] = currentRound;
+        enemyLastSeen[wrapX(loc.x)][wrapY(loc.y)] = currentRound;
         messagedEnemyRobots.insert(loc);
       }
     };
@@ -71,11 +71,12 @@ public class SoldierBehavior extends RobotBehavior {
     microLocations.clear();
     messagedEnemyRobots.clear();
     messagingSystem.beginRound(handlers);
+    Utils.doPathing(1000);
   }
 
   @Override
   public void endRound() throws GameActionException {
-    sendEnemyMessages();
+    // sendEnemyMessages();
     messagingSystem.endRound();
   }
 
@@ -83,7 +84,9 @@ public class SoldierBehavior extends RobotBehavior {
     for (RobotInfo info : enemyRobots) {
       if (info.type == RobotType.HQ) continue;
       MapLocation loc = info.location;
-      if (enemyLastSeen[loc.x][loc.y] < currentRound) {
+      int x = wrapX(loc.x);
+      int y = wrapY(loc.y);
+      if (enemyLastSeen[x][y] < currentRound) {
         // enemyLastSeen[loc.x][loc.y] = currentRound;
         messagingSystem.writeEnemyBotMessage(loc);
       }
@@ -108,9 +111,11 @@ public class SoldierBehavior extends RobotBehavior {
       }
     }
 
-    if (enemyRobots.length > (RC.canSenseLocation(ENEMY_HQ) ? 1 : 0) || hasNearbyPlea) {
+    if (enemyRobots.length > 0 || hasNearbyPlea) {
       setMode(Mode.COMBAT);
       return;
+    } else {
+      RC.setIndicatorString(2, "Not going into combat.");
     }
 
     // TODO: use priorities for where to be?
@@ -129,12 +134,12 @@ public class SoldierBehavior extends RobotBehavior {
   }
 
   private void setMode(Mode m) {
-    // RC.setIndicatorString(0, m.toString());
+    RC.setIndicatorString(0, m.toString());
     mode = m;
   }
 
   private void setMode(Mode m, MapLocation target) {
-    // RC.setIndicatorString(0, m + " " + target + " 2nd? " + buildingSecondPastr);
+    RC.setIndicatorString(0, m + " " + target);
     mode = m;
   }
 

@@ -35,7 +35,7 @@ public class SoldierUtils {
 
     if (nearbyEnemies.length == 0) { // no enemies: don't micro
       return false;
-    } else if (isActive()) {
+    } else if (RC.isCoreReady()) {
       // RC.setIndicatorString(2, "luging!");
       RobotInfo[] nearbyTeam = RC.senseNearbyRobots(35, ALLY_TEAM);
       int enemyWeight = 0;
@@ -85,7 +85,7 @@ public class SoldierUtils {
         if (isHelpingOut) {
           // RC.setIndicatorString(2, "helping out to kill guy at " + callX + "," + callY);
         }
-        if (isActive()) { // willing to attack!
+        if (RC.isWeaponReady()) { // willing to attack!
           if ((nearbyEnemies.length == 0 || nearbyTeam.length - 1 >= enemyWeight || isHelpingOut)
               && enemiesInRange.length == 0) {
             // willing to move forward and attack!

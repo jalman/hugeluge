@@ -5,6 +5,7 @@ import static battlecode.common.Direction.*;
 import java.util.*;
 
 import messagetest.messaging.*;
+import messagetest.nav.*;
 import battlecode.common.*;
 
 public class Utils {
@@ -15,10 +16,14 @@ public class Utils {
   public static final TerrainTile[] TERRAIN_TILES = TerrainTile.values();
   public static final Direction[] DIRECTIONS = Direction.values();
 
-  public static final int ROAD_DIAGONAL = 7;
-  public static final int ROAD_ORTHOGONAL = 5;
-  public static final int NORMAL_DIAGONAL = 14;
-  public static final int NORMAL_ORTHOGONAL = 10;
+  public static final Direction[] CARDINAL = new Direction[] {NORTH, WEST, SOUTH, EAST};
+
+  public static final int NORMAL_DIAGONAL = 7;
+  public static final int NORMAL_ORTHOGONAL = 5;
+
+  public static int getDirWeight(Direction dir) {
+    return dir.isDiagonal() ? NORMAL_DIAGONAL : NORMAL_ORTHOGONAL;
+  }
 
   /**
    * Distance assuming normal terrain and no obstacles.
@@ -37,21 +42,26 @@ public class Utils {
     return (min * NORMAL_DIAGONAL + diff * NORMAL_ORTHOGONAL);
   }
 
-  public static final int WEIGHT[][] = new int[TERRAIN_TILES.length][8];
-
-  static {
-    for (int i = 0; i < 8; i += 2) {
-      WEIGHT[TerrainTile.NORMAL.ordinal()][i] = NORMAL_ORTHOGONAL;
-      // WEIGHT[TerrainTile.ROAD.ordinal()][i] = ROAD_ORTHOGONAL;
-    }
-    for (int i = 1; i < 8; i += 2) {
-      WEIGHT[TerrainTile.NORMAL.ordinal()][i] = NORMAL_DIAGONAL;
-      // WEIGHT[TerrainTile.ROAD.ordinal()][i] = ROAD_DIAGONAL;
-    }
+  /**
+   * Standard Manhattan distance.
+   */
+  public static int manhattan(MapLocation loc1, MapLocation loc2) {
+    int dx = loc1.x - loc2.x;
+    dx = dx < 0 ? -dx : dx;
+    int dy = loc1.y - loc2.y;
+    dy = dy < 0 ? -dy : dy;
+    return dx + dy;
   }
 
-  public static int getActionDelay(MapLocation loc, Direction dir) {
-    return WEIGHT[RC.senseTerrainTile(loc).ordinal()][dir.ordinal()];
+  /**
+   * Distance assuming all 8 direction have distance 1.
+   */
+  public static int octile(MapLocation loc1, MapLocation loc2) {
+    int dx = loc1.x - loc2.x;
+    dx = dx < 0 ? -dx : dx;
+    int dy = loc1.y - loc2.y;
+    dy = dy < 0 ? -dy : dy;
+    return dx > dy ? dx : dy;
   }
 
   public static final Direction[] REGULAR_DIRECTIONS = new Direction[] {
@@ -66,9 +76,24 @@ public class Utils {
     }
   }
 
-  public static final int WRAP_X = GameConstants.MAP_MAX_WIDTH + 10;
-  public static final int WRAP_Y = GameConstants.MAP_MAX_HEIGHT + 10;
+  public static final int WRAP_X = GameConstants.MAP_MAX_WIDTH + 6;
+  public static final int WRAP_Y = GameConstants.MAP_MAX_HEIGHT + 6;
   public static final int MAP_MAX_SIZE = WRAP_X * WRAP_Y;
+
+  public static final int wrapX(int x) {
+    x %= WRAP_X;
+    if (x < 0) x += WRAP_X;
+    return x;
+  }
+
+  public static final int wrapY(int y) {
+    y %= WRAP_Y;
+    if (y < 0) y += WRAP_Y;
+    return y;
+  }
+
+  public static final int TOWER_SENSOR_RADIUS2 = 35;
+  public static final int ROBOT_SENSOR_RADIUS2 = 24;
 
   // these are set from the beginning of the game
   public static RobotController RC;
@@ -91,7 +116,7 @@ public class Utils {
   // this is for messaging
   public static MessagingSystem messagingSystem;
 
-  public static MapLocation currentLocation;
+  public static MapLocation currentLocation, previousLocation;
   public static int curX, curY;
   public static double currentCowsHere;
   // public static double forward;
@@ -111,7 +136,6 @@ public class Utils {
 
     ALLY_HQ = rc.senseHQLocation();
     ENEMY_HQ = rc.senseEnemyHQLocation();
-
     ENEMY_DIR = ALLY_HQ.directionTo(ENEMY_HQ);
 
     HQ_DX = ENEMY_HQ.x - ALLY_HQ.x;
@@ -129,6 +153,7 @@ public class Utils {
     MAP_MAX_Y = min_y + GameConstants.MAP_MAX_HEIGHT;
 
     currentLocation = RC.getLocation();
+    previousLocation = currentLocation;
     curX = currentLocation.x;
     curY = currentLocation.y;
 
@@ -145,10 +170,14 @@ public class Utils {
    * Called at the beginning of each round by buildings.
    */
   public static void updateUtils() {
-    enemyRobots = RC.senseNearbyRobots(currentLocation, SENSOR_RADIUS2, ENEMY_TEAM);
-    // allyRobots = RC.senseNearbyRobots(currentLocation, SENSOR_RADIUS2, ALLY_TEAM);
+    previousLocation = currentLocation;
+    currentLocation = RC.getLocation();
     currentRound = Clock.getRoundNum();
     bytecodes = Clock.getBytecodeNum();
+
+    enemyRobots = RC.senseNearbyRobots(currentLocation, SENSOR_RADIUS2, ENEMY_TEAM);
+    // allyRobots = RC.senseNearbyRobots(currentLocation, SENSOR_RADIUS2, ALLY_TEAM);
+
   }
 
   /**
@@ -243,6 +272,7 @@ public class Utils {
     return unsafeLocs;
   }
 
+  // TODO: needs to be tweaked and could probably be done better
   public static boolean[][] getUnsafe() {
     if (unsafe == null) {
       unsafe = new boolean[GameConstants.MAP_MAX_WIDTH][GameConstants.MAP_MAX_HEIGHT];
@@ -255,11 +285,43 @@ public class Utils {
     return unsafe;
   }
 
-  /**
-   * Crude approximation of last year's RC.isActive().
-   * @return isCoreReady && isWeaponReady
-   */
-  public static boolean isActive() {
-    return RC.isCoreReady() && RC.isWeaponReady();
+  public static void doPathing(int bytecodes) throws GameActionException {
+    Pair<Direction, Integer> info = messagingSystem.readPathingInfo(currentLocation);
+
+    // if (info.first != null) return;
+
+    BFS bfs = new BFS(true);
+
+    Function<MapLocation, Boolean> stop = new Function<MapLocation, Boolean>() {
+      @Override
+      public Boolean apply(MapLocation loc) {
+        return loc.distanceSquaredTo(currentLocation) > SENSOR_RADIUS2;
+      }
+    };
+
+    bfs.compute(bytecodes, stop);
   }
+
+  /**
+   * Get the MapLocations we can see this round but not last round.
+   */
+  public static MapLocation[] getNewLocs() {
+    if (currentLocation == previousLocation) {
+      return new MapLocation[] {};
+    }
+
+    Direction moved = previousLocation.directionTo(currentLocation);
+
+    int[][] deltas = Sensor.newLocs.get(moved);
+
+    MapLocation[] locs = new MapLocation[deltas.length];
+
+    for (int i = 0; i < locs.length; ++i) {
+      int[] delta = deltas[i];
+      locs[i] = currentLocation.add(delta[0], delta[1]);
+    }
+
+    return locs;
+  }
+
 }

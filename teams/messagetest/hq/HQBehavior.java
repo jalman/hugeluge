@@ -10,7 +10,7 @@ import messagetest.nav.*;
 import messagetest.utils.*;
 import battlecode.common.*;
 
-public class HQBehavior extends BuilderBehavior {
+public class HQBehavior extends RobotBehavior {
 
   // HQAction[] buildOrder;
   // int buildOrderProgress = 0;
@@ -99,15 +99,6 @@ public class HQBehavior extends BuilderBehavior {
   @Override
   public void endRound() throws GameActionException {
     messagingSystem.endRound();
-    if (!dijkstra.done() && currentRound <= 2000) {
-      dijkstra.compute(9900, true);
-      if (dijkstra.done()) {
-        System.out.println("Dijkstra finished on round " + currentRound);
-        if (!dijkstra.visited(rally)) {
-          setRallyPoint();
-        }
-      }
-    }
   }
 
   public static float defendabilityScore(MapLocation loc, Direction toEnemy) {
@@ -166,8 +157,13 @@ public class HQBehavior extends BuilderBehavior {
     }
 
     if (numBeavers < MAX_BEAVERS) {
-      this.buildRobot(RobotType.BEAVER);
+      StaticBuilder.buildRobot(RobotType.BEAVER);
     }
+
+    buildBarracks();
   }
 
+  private void buildBarracks() {
+    RC.setIndicatorString(1, RC.checkDependencyProgress(RobotType.BARRACKS).toString());
+  }
 }

@@ -8,52 +8,60 @@ import battlecode.common.*;
  * @author vlad
  *
  */
-public abstract class GradientMover {
+public abstract class GradientMover extends NavAlg {
   public abstract int getWeight(MapLocation loc);
 
   /**
    * Move down the gradient (towards the source).
-   * @return Whether ended up moving.
+   * @return The best direction, or none if impossible.
    */
-  public boolean move() throws GameActionException {
-    if (!RC.isCoreReady()) return false;
-
-    Direction dir = Direction.SOUTH, best = null;
+  @Override
+  public Direction getNextDir() {
+    Direction dir = Direction.SOUTH, best = Direction.NONE;
     int min = Integer.MAX_VALUE;
-    // StringBuilder str = new StringBuilder();
-    for (int i = 8; --i >= 0;) {
-      MapLocation next = currentLocation.add(dir);
-      int d = RC.canMove(dir) && isSafe(next) ? getWeight(next) : Integer.MAX_VALUE;
-      // str.append(dir + "(" + d + "), ");
 
-      if (d < min) {
-        min = d;
+    StringBuilder s = new StringBuilder();
+
+    for (int i = 8; --i >= 0; dir = dir.rotateRight()) {
+      int w = getWeight(currentLocation.add(dir));
+
+      s.append("(" + dir + ", " + w + "), ");
+
+      if (!RC.canMove(dir)) continue;
+
+      // System.out.println(w);
+
+      if (w < min) {
+        min = w;
         best = dir;
       }
-      dir = dir.rotateRight();
     }
-    // RC.setIndicatorString(1, str.toString());
 
-    // System.out.println(str);
+    RC.setIndicatorLine(currentLocation, currentLocation.add(best), 255, 255, 255);
+    RC.setIndicatorString(1, s.toString());
 
-    if (best != null) {
-      RC.move(best);
-      return true;
-    }
-    return false;
+    return best;
   }
 
   /**
-   * Move up the gradient (away from the sources).
+   * Move up the gradient.
    * @return Whether ended up moving.
    */
-  public boolean ascend() throws GameActionException {
-    return new GradientMover() {
-      @Override
-      public int getWeight(MapLocation loc) {
-        return -GradientMover.this.getWeight(loc);
-      }
-    }.move();
-  }
+  public Direction ascend() throws GameActionException {
+    Direction dir = Direction.SOUTH, best = Direction.NONE;
+    int max = Integer.MIN_VALUE;
 
+    for (int i = 8; --i >= 0; dir = dir.rotateRight()) {
+      if (!RC.canMove(dir)) continue;
+
+      int w = getWeight(currentLocation.add(dir));
+
+      if (w > max) {
+        max = w;
+        best = dir;
+      }
+    }
+
+    return best;
+  }
 }

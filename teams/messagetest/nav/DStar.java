@@ -9,7 +9,7 @@ public class DStar extends GradientMover {
   /**
    * Starting locations of DStar.
    */
-  // public ArraySet<MapLocation> sources = new ArraySet<MapLocation>(MAP_SIZE);
+  public ArraySet<MapLocation> sources;
 
   public MapLocation dest;
 
@@ -17,8 +17,11 @@ public class DStar extends GradientMover {
    * Direction in which we traveled to get to this location.
    */
   public Direction[][] from = new Direction[WRAP_X][WRAP_Y];
+
+  // public boolean[][][] to = new boolean[WRAP_X][WRAP_Y][8];
+
   /**
-   * Distance (times 5) to this location.
+   * Conjectured distance to this location.
    */
   public int distance[][] = new int[WRAP_X][WRAP_Y];
 
@@ -29,74 +32,99 @@ public class DStar extends GradientMover {
 
   private final boolean expanded[][] = new boolean[WRAP_X][WRAP_Y];
 
-  private final BucketQueue<MapLocation> queue = new BucketQueue<MapLocation>(5 * MAP_MAX_SIZE, 4);
+  private final BucketQueue<MapLocation> queue = new BucketQueue<MapLocation>(MAP_MAX_SIZE, 8);
 
   public DStar() {
     // hack to go around the hqs
-    distance[ALLY_HQ.x][ALLY_HQ.y] = Integer.MAX_VALUE;
-    expanded[ALLY_HQ.x][ALLY_HQ.y] = true;
+    /*
+     * int x = wrapX(ALLY_HQ.x);
+     * int y = wrapY(ALLY_HQ.y);
+     * distance[x][y] = Integer.MAX_VALUE;
+     * expanded[x][y] = true;
+     */
 
-    ArraySet<MapLocation> unsafeLocs = getUnsafeLocs();
-    for (int i = unsafeLocs.size; --i >= 0;) {
-      MapLocation loc = unsafeLocs.get(i);
-      distance[loc.x][loc.y] = Integer.MAX_VALUE;
-      expanded[loc.x][loc.y] = true;
-    }
+    // TODO: HQs and towers are not invincible, but still scary
+    /*
+     * ArraySet<MapLocation> unsafeLocs = getUnsafeLocs();
+     * for (int i = unsafeLocs.size; --i >= 0;) {
+     * MapLocation loc = unsafeLocs.get(i);
+     * x = wrapX(loc.x);
+     * y = wrapY(loc.y);
+     * distance[x][y] = Integer.MAX_VALUE;
+     * expanded[x][y] = true;
+     * }
+     */
   }
 
-  public DStar(ArraySet<MapLocation> sources, int[] distances, MapLocation dest) {
+  public DStar(ArraySet<MapLocation> sources, int[] distances) {
     this();
-    // this.sources = sources;
+    this.sources = sources;
 
     for (int i = sources.size; --i >= 0;) {
       insert(sources.get(i), distances[i]);
     }
   }
 
-  public void insert(MapLocation source, int distance) {
-    int x = source.x % WRAP_X;
-    int y = source.y % WRAP_Y;
+  public int heuristic(MapLocation loc) {
+    // TODO: min over sources?
+    return octile(loc, sources.get(0));
+  }
 
-    int e = distance + naiveDistance(source, dest);
-    queue.insert(e, source);
+  public void insert(MapLocation loc, int distance) {
+    int x = loc.x % WRAP_X;
+    int y = loc.y % WRAP_Y;
+
+    int e = distance + heuristic(loc);
+    queue.insert(e, loc);
     this.distance[x][y] = distance;
     // leave as null to cause exceptions if we accidentally try to use it?
     from[x][y] = Direction.NONE;
   }
 
-  public void insert(MapLocation source, int distance, Direction dir) {
-    int x = source.x % WRAP_X;
-    int y = source.y % WRAP_Y;
+  public void insert(MapLocation loc, int distance, Direction dir) {
+    int x = loc.x % WRAP_X;
+    int y = loc.y % WRAP_Y;
 
     expanded[x][y] = false;
     this.distance[x][y] = distance;
-    int e = distance + naiveDistance(source, dest);
-    queue.insert(e, source);
+    // TODO: min over sources?
+    int e = distance + heuristic(loc);
+    queue.insert(e, loc);
     from[x][y] = dir;
   }
 
   /**
-   * @return Whether we have any more computation to do.
+   * Discover that a tile is blocked.
+   * @param loc The tile's location.
    */
-  public boolean done() {
-    return queue.size == 0;
+  public void remove(MapLocation blocked) {
+    // TODO: speed this up?
+    for (Direction dir : REGULAR_DIRECTIONS) {
+      MapLocation loc = blocked.add(dir);
+      int x = wrapX(loc.x);
+      int y = wrapY(loc.y);
+
+      if (from[x][y] == dir) {
+        from[x][y] = null;
+        expanded[x][y] = false;
+        remove(loc);
+      }
+    }
   }
 
   public boolean compute(int bytecodes) {
     // cache variables
     int d, w, e, x, y;
-    int[] weight;
     MapLocation next, nbr;
     Direction dir;
     final BucketQueue<MapLocation> queue = this.queue;
     final int[][] distance = this.distance;
     final Direction[][] from = this.from;
-    final MapLocation dest = this.dest;
 
     // int iters = 0;
     // int bc = Clock.getBytecodeNum();
 
-    while (queue.size > 0) {
+    while (!done()) {
       // iters++;
       if (Clock.getBytecodeNum() >= bytecodes - 600) {
         break;
@@ -106,61 +134,54 @@ public class DStar extends GradientMover {
       // ALERT: queue.min is valid only after a call to deleteMin()!
       next = queue.deleteMin();
 
-      x = next.x;
-      y = next.y;
+      x = next.x % WRAP_X;
+      y = next.y % WRAP_Y;
+
+      dir = from[x][y];
+
+      // node is no longer valid due to map updates
+      if (dir == null) continue;
+
+      // check if node has already been expanded
+      if (expanded[x][y]) continue;
+      expanded[x][y] = true;
+
       d = distance[x][y];
 
-      // check if we have already visited this node
-      if (!expanded[x][y]) {
-        expanded[x][y] = true;
-        /*
-         * if (broadcast) {
-         * try {
-         * messagingSystem.writePathingDirection(next, from[x][y]);
-         * } catch (GameActionException ex) {
-         * ex.printStackTrace();
-         * }
-         * }
-         */
+      /*
+       * if (broadcast) {
+       * try {
+       * messagingSystem.writePathingDirection(next, from[x][y]);
+       * } catch (GameActionException ex) {
+       * ex.printStackTrace();
+       * }
+       * }
+       */
 
-        // TODO: Huge problem here; the terrain tile might be OFF_MAP or UNKNOWN
-        weight = WEIGHT[RC.senseTerrainTile(next).ordinal()];
+      Direction[] nbrs = Neighbors.getNeighborsOpt(next, dir);
 
-        dir = from[x][y];
-        int i;
-        if (dir == Direction.NONE) {
-          dir = Direction.NORTH;
-          i = 8;
-        } else if (dir.isDiagonal()) {
-          dir = dir.rotateLeft().rotateLeft();
-          i = 5;
-        } else {
-          dir = dir.rotateLeft();
-          i = 3;
-        }
+      w = d + 1;
+      for (Direction ndir : nbrs) {
+        nbr = next.add(ndir);
+        // TODO: how are UNKNOWN tiles handled?
+        if (RC.senseTerrainTile(nbr).isTraversable()) {
+          e = w + heuristic(nbr);
 
-        for (; --i >= 0; dir = dir.rotateRight()) {
-          nbr = next.add(dir);
-          if (RC.senseTerrainTile(nbr).isTraversable()) {
-            w = d + weight[dir.ordinal()];
-            e = w + naiveDistance(nbr, dest);
+          x = nbr.x % WRAP_X;
+          y = nbr.y % WRAP_Y;
 
-            x = nbr.x;
-            y = nbr.y;
-
-            if (from[x][y] == null) {
+          if (from[x][y] == null) {
+            queue.insert(e, nbr);
+            distance[x][y] = w;
+            // estimate[x][y] = e;
+            from[x][y] = ndir;
+          } else {
+            if (w < distance[x][y] || from[x][y] == ndir) {
               queue.insert(e, nbr);
               distance[x][y] = w;
               // estimate[x][y] = e;
-              from[x][y] = dir;
-            } else {
-              if (w < distance[x][y]) {
-                queue.insert(e, nbr);
-                distance[x][y] = w;
-                // estimate[x][y] = e;
-                from[x][y] = dir;
-                expanded[x][y] = false;
-              }
+              from[x][y] = ndir;
+              expanded[x][y] = false;
             }
           }
         }
@@ -170,7 +191,7 @@ public class DStar extends GradientMover {
     // bc = Clock.getBytecodeNum() - bc;
     // RC.setIndicatorString(2, "average DStar bytecodes: " + (iters > 0 ? bc / iters : bc));
 
-    return visited(dest);
+    return done();
   }
 
   public int getDistance(int x, int y) {
@@ -187,6 +208,19 @@ public class DStar extends GradientMover {
   }
 
   public boolean visited(MapLocation loc) {
-    return from[loc.x][loc.y] != null;
+    return from[wrapX(loc.x)][wrapY(loc.y)] != null;
+  }
+
+  /**
+   * @return Whether we have found ourselves.
+   */
+  public boolean done() {
+    return visited(currentLocation);
+  }
+
+  @Override
+  public void setTarget(MapLocation finish) {
+    // TODO Auto-generated method stub
+
   }
 }
