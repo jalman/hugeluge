@@ -112,7 +112,8 @@ public class DStar extends GradientMover {
     }
   }
 
-  public boolean compute(int bytecodes) {
+  @Override
+  public void compute(int bytecodes) {
     // cache variables
     int d, w, e, x, y;
     MapLocation next, nbr;
@@ -190,8 +191,6 @@ public class DStar extends GradientMover {
 
     // bc = Clock.getBytecodeNum() - bc;
     // RC.setIndicatorString(2, "average DStar bytecodes: " + (iters > 0 ? bc / iters : bc));
-
-    return done();
   }
 
   public int getDistance(int x, int y) {
