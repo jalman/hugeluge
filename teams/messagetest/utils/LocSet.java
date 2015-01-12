@@ -16,7 +16,7 @@ public class LocSet {
 
   public boolean[][] has = new boolean[WRAP_X][WRAP_Y];
   public int index[][] = new int[WRAP_X][WRAP_Y];
-  public MapLocation[] locs = new MapLocation[WRAP_X * WRAP_Y];
+  public MapLocation[] locs = new MapLocation[MAP_MAX_SIZE];
   public int size = 0;
 
   public LocSet(MapLocation... sources) {
@@ -27,8 +27,8 @@ public class LocSet {
 
   public void insert(MapLocation loc) {
     // System.out.println(loc);
-    int x = loc.x % WRAP_X;
-    int y = loc.y % WRAP_Y;
+    int x = wrapX(loc.x);
+    int y = wrapY(loc.y);
 
     if (!has[x][y]) {
       has[x][y] = true;
@@ -42,15 +42,31 @@ public class LocSet {
   }
 
   public boolean contains(MapLocation loc) {
-    return has[loc.x % WRAP_X][loc.y % WRAP_Y];
+    return has[wrapX(loc.x)][wrapY(loc.y)];
   }
 
   public int getIndex(MapLocation loc) {
-    return index[loc.x % WRAP_X][loc.y % WRAP_Y];
+    return index[wrapX(loc.x)][wrapY(loc.y)];
   }
 
   public MapLocation get(int index) {
     return locs[index];
+  }
+
+  public void delete(int index) {
+    MapLocation loc = locs[index];
+    has[wrapX(loc.x)][wrapY(loc.y)] = false;
+
+    --size;
+    loc = locs[size];
+    locs[index] = loc;
+    this.index[wrapX(loc.x)][wrapY(loc.y)] = index;
+  }
+
+  public void remove(MapLocation loc) {
+    if (contains(loc)) {
+      delete(getIndex(loc));
+    }
   }
 
   public int size() {

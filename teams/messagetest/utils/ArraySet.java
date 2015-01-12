@@ -1,11 +1,14 @@
 package messagetest.utils;
 
+import java.util.*;
+
 public class ArraySet<T> {
-  private final Object[] array;
+  private final T[] array;
   public int size;
 
+  @SuppressWarnings("unchecked")
   public ArraySet(int capacity) {
-    array = new Object[capacity];
+    array = (T[]) new Object[capacity];
     size = 0;
   }
 
@@ -19,9 +22,8 @@ public class ArraySet<T> {
     array[size++] = t;
   }
 
-  @SuppressWarnings("unchecked")
   public T get(int index) {
-    return (T) array[index];
+    return array[index];
   }
 
   public void set(int index, T t) {
@@ -34,12 +36,24 @@ public class ArraySet<T> {
     }
   }
 
+  public void remove(T t) {
+    for (int i = size; --i >= 0;) {
+      if (t == array[i]) {
+        delete(i);
+      }
+    }
+  }
+
   public void clear() {
     size = 0;
   }
 
   public boolean isEmpty() {
     return size == 0;
+  }
+
+  public T[] toArray() {
+    return Arrays.copyOf(array, size);
   }
 
   public void debug() {
